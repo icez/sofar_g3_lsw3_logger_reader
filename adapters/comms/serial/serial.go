@@ -1,11 +1,14 @@
 package serial
 
 import (
+	"fmt"
 	"io"
+	"log/slog"
 	"time"
 
-	"github.com/icez/sofar_g3_lsw3_logger_reader/ports"
 	"go.bug.st/serial"
+
+	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/ports"
 )
 
 type serialPort struct {
@@ -32,7 +35,9 @@ func New(name string, baud int, dataBits int, parityMode serial.Parity, stopBits
 
 func (s *serialPort) Open() error {
 	if s.serialPort != nil {
-		s.Close()
+		if err := s.Close(); err != nil {
+			slog.Error(fmt.Sprintf("error during serial port connection close: %s", err))
+		}
 	}
 
 	mode := &serial.Mode{

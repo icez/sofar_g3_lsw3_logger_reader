@@ -3,7 +3,8 @@ package ports
 import mqtt "github.com/eclipse/paho.mqtt.golang"
 
 type Database interface {
-	InsertRecord(measurement map[string]interface{}) error
+	InsertDiscoveryRecord(discovery string, prefix string, fields []DiscoveryField) error
+	InsertRecord(measurement MeasurementMap) error
 }
 
 type DatabaseWithListener interface {

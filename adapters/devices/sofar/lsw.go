@@ -3,9 +3,11 @@ package sofar
 import (
 	"encoding/binary"
 	"fmt"
+	"log/slog"
 
-	"github.com/icez/sofar_g3_lsw3_logger_reader/ports"
 	"github.com/sigurn/crc16"
+
+	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/ports"
 )
 
 type LSWRequest struct {
@@ -32,7 +34,6 @@ func (l LSWRequest) ToBytes() []byte {
 	buf[5] = 0x00
 	buf[6] = 0x00
 
-	// fmt.Printf("serial number: %0X\n", uint32SerialNumber)
 	binary.LittleEndian.PutUint32(buf[7:], uint32(l.serialNumber))
 
 	buf[11] = 0x02
@@ -71,12 +72,19 @@ func (l LSWRequest) checksum(buf []byte) uint8 {
 	return checksum
 }
 
-func ReadData(connPort ports.CommunicationPort, serialNumber uint) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
+func readData(connPort ports.CommunicationPort, serialNumber uint, nameFilter func(string) bool) (ports.MeasurementMap, error) {
+	result := make(ports.MeasurementMap)
 
-	reply, err := readData(rrGridOutput, connPort, serialNumber)
-	if err != nil {
-		return nil, err
+	for _, rr := range allRegisterRanges {
+		reply, err := readRegisterRange(rr, connPort, serialNumber)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range reply {
+			if nameFilter(k) {
+				result[k] = v
+			}
+		}
 	}
 
 	for k, v := range reply {
@@ -129,10 +137,10 @@ func ReadData(connPort ports.CommunicationPort, serialNumber uint) (map[string]i
 	}
 
 	return result, err
+	return result, nil
 }
 
-func readData(rr RegisterRange, connPort ports.CommunicationPort, serialNumber uint) (map[string]interface{}, error) {
-
+func readRegisterRange(rr registerRange, connPort ports.CommunicationPort, serialNumber uint) (ports.MeasurementMap, error) {
 	lswRequest := NewLSWRequest(serialNumber, rr.start, rr.end)
 
 	commandBytes := lswRequest.ToBytes()
@@ -142,7 +150,11 @@ func readData(rr RegisterRange, connPort ports.CommunicationPort, serialNumber u
 		return nil, err
 	}
 
-	defer connPort.Close()
+	defer func(connPort ports.CommunicationPort) {
+		if err := connPort.Close(); err != nil {
+			slog.Error(fmt.Sprintf("error during connection close: %s", err))
+		}
+	}(connPort)
 
 	// send the command
 	_, err = connPort.Write(commandBytes)
@@ -150,27 +162,25 @@ func readData(rr RegisterRange, connPort ports.CommunicationPort, serialNumber u
 		return nil, err
 	}
 
-	// read the result
-	buf := make([]byte, 2048)
-	n, err := connPort.Read(buf)
-	if err != nil {
-		return nil, err
+	// read enough bytes
+	buf := []byte{}
+	for {
+		b := make([]byte, 2048)
+		n, err := connPort.Read(b)
+		if n > 0 {
+			buf = append(buf, b[:n]...)
+		}
+		if err != nil {
+			return nil, err
+		}
+		if len(buf) >= 28 && len(buf) >= 28+int(buf[27]) {
+			break
+		}
 	}
-
-	// truncate the buffer
-	buf = buf[:n]
-	if len(buf) < 48 {
-		// short reply
-		return nil, fmt.Errorf("short reply: %d bytes", n)
-	}
-
-	replyBytesCount := buf[27]
-
-	modbusReply := buf[28 : 28+replyBytesCount]
+	modbusReply := buf[28 : 28+buf[27]]
 
 	// shove the data into the reply
 	reply := make(map[string]interface{})
-
 	for _, f := range rr.replyFields {
 		fieldOffset := (f.register - rr.start) * 2
 
@@ -191,5 +201,4 @@ func readData(rr RegisterRange, connPort ports.CommunicationPort, serialNumber u
 	}
 
 	return reply, nil
-
 }

@@ -1,13 +1,14 @@
 package tcpip
 
 import (
-	"bufio"
 	"fmt"
 	"net"
 	"time"
 
 	"github.com/icez/sofar_g3_lsw3_logger_reader/ports"
 )
+
+const timeout = 20 * time.Second
 
 type tcpIpPort struct {
 	name string
@@ -49,28 +50,20 @@ func (s *tcpIpPort) Read(buf []byte) (int, error) {
 		return 0, fmt.Errorf("connection is not open")
 	}
 
-	reader := bufio.NewReader(s.conn)
-	return reader.Read(buf)
+	if err := s.conn.SetReadDeadline(time.Now().Add(timeout)); err != nil {
+		return 0, err
+	}
+
+	return s.conn.Read(buf)
 }
 
 func (s *tcpIpPort) Write(payload []byte) (int, error) {
 	if s.conn == nil {
 		return 0, fmt.Errorf("connection is not open")
 	}
-	s.conn.SetWriteDeadline(time.Now().Add(20 * time.Second))
+	if err := s.conn.SetWriteDeadline(time.Now().Add(timeout)); err != nil {
+		return 0, err
+	}
+
 	return s.conn.Write(payload)
-}
-
-func (s *tcpIpPort) SetWriteDeadline(t time.Time) error {
-	if s.conn == nil {
-		return fmt.Errorf("connection is not open")
-	}
-	return s.conn.SetWriteDeadline(t)
-}
-
-func (s *tcpIpPort) SetReadDeadline(t time.Time) error {
-	if s.conn == nil {
-		return fmt.Errorf("connection is not open")
-	}
-	return s.conn.SetReadDeadline(t)
 }
