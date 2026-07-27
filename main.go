@@ -98,7 +98,7 @@ func initializeFilters() {
 func main() {
 	initialize()
 
-	if hasMQTT && config.Mqtt.Discovery == nil {
+	if hasMQTT && config.Mqtt.Discovery != nil {
 		_ = mqtt.InsertDiscoveryRecord(*config.Mqtt.Discovery, config.Mqtt.Prefix, device.GetDiscoveryFields()) // logs errors, always returns nil
 	}
 

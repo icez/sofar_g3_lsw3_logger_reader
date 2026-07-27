@@ -66,7 +66,17 @@ func (conn *Connection) publish(topic string, msg string, retain bool) {
 	}
 }
 
-// return "power" for kW etc., "energy" for kWh etc.
+// rewrite units into the exact spellings Home Assistant accepts, otherwise it
+// rejects the entity: https://developers.home-assistant.io/docs/core/entity/sensor/
+var unitReplacer = strings.NewReplacer(
+	"℃", "°C", // U+2103 DEGREE CELSIUS is not recognised, °C (U+00B0 + "C") is
+)
+
+func normalizeUnit(unit string) string {
+	return unitReplacer.Replace(unit)
+}
+
+// return "power" for kW etc., "energy" for kWh etc. Expects a normalized unit.
 func unit2DeviceClass(unit string) string {
 	if strings.HasSuffix(unit, "Wh") {
 		return "energy"
@@ -82,13 +92,13 @@ func unit2DeviceClass(unit string) string {
 		return "voltage"
 	} else if strings.HasSuffix(unit, "A") {
 		return "current"
-	} else if strings.HasSuffix(unit, "Ω") {
-		return "voltage" // resistance not valid in https://developers.home-assistant.io/docs/core/entity/sensor/ so use "voltage"
-	} else if strings.HasSuffix(unit, "℃") {
+	} else if strings.HasSuffix(unit, "°C") {
 		return "temperature"
 	} else if strings.HasSuffix(unit, "min") {
 		return "duration"
 	} else {
+		// no device class: resistance (Ω) has none, and a wrong one makes HA
+		// reject the entity because the unit does not match
 		return ""
 	}
 }
@@ -101,19 +111,29 @@ func unit2StateClass(unit string) string {
 	}
 }
 
+// a field without a factor needs no scaling, and emitting an empty multiplier
+// would produce a template Home Assistant cannot parse
+func valueTemplate(name string, factor string) string {
+	if factor == "" {
+		return fmt.Sprintf("{{ value_json.%s|int }}", name)
+	}
+	return fmt.Sprintf("{{ value_json.%s|int * %s }}", name, factor)
+}
+
 // MQTT Discovery: https://www.home-assistant.io/integrations/mqtt/#mqtt-discovery
 func (conn *Connection) InsertDiscoveryRecord(discovery string, state string, fields []ports.DiscoveryField) error {
 	uniq := "01ad"
 	for _, f := range fields {
 		topic := fmt.Sprintf("%s/%s/config", discovery, f.Name)
+		unit := normalizeUnit(f.Unit)
 		json, _ := json.Marshal(map[string]interface{}{
 			"name":                  f.Name,
 			"unique_id":             fmt.Sprintf("%s_%s", f.Name, uniq),
-			"device_class":          unit2DeviceClass(f.Unit),
-			"state_class":           unit2StateClass(f.Unit),
+			"device_class":          unit2DeviceClass(unit),
+			"state_class":           unit2StateClass(unit),
 			"state_topic":           state,
-			"unit_of_measurement":   f.Unit,
-			"value_template":        fmt.Sprintf("{{ value_json.%s|int * %s }}", f.Name, f.Factor),
+			"unit_of_measurement":   unit,
+			"value_template":        valueTemplate(f.Name, f.Factor),
 			"availability_topic":    state,
 			"availability_template": "{{ value_json.availability }}",
 			"device": map[string]interface{}{
