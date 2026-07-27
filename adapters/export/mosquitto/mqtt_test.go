@@ -1,6 +1,10 @@
 package mosquitto
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/icez/sofar_g3_lsw3_logger_reader/ports"
+)
 
 func TestNormalizeUnit(t *testing.T) {
 	cases := map[string]string{
@@ -70,5 +74,43 @@ func TestValueTemplate(t *testing.T) {
 
 	if got, expected := valueTemplate("SysState", ""), "{{ value_json.SysState|int }}"; got != expected {
 		t.Errorf("valueTemplate without factor = %q, want %q", got, expected)
+	}
+}
+
+func TestDiscoveryConfigOmitsEmptyDeviceClass(t *testing.T) {
+	// no device class fits "%", and Home Assistant rejects the whole config
+	// rather than ignoring an empty one
+	config := discoveryConfig(ports.DiscoveryField{Name: "SOC_Bat1", Factor: "1", Unit: "%"}, "energy/inverter/state", "01ad")
+
+	if _, present := config["device_class"]; present {
+		t.Errorf("device_class present for a unit with no device class: %q", config["device_class"])
+	}
+
+	if config["unit_of_measurement"] != "%" {
+		t.Errorf("unit_of_measurement = %q, want %q", config["unit_of_measurement"], "%")
+	}
+}
+
+func TestDiscoveryConfigOmitsEmptyUnit(t *testing.T) {
+	config := discoveryConfig(ports.DiscoveryField{Name: "Fault1", Factor: "", Unit: ""}, "energy/inverter/state", "01ad")
+
+	if _, present := config["unit_of_measurement"]; present {
+		t.Errorf("unit_of_measurement present for a unitless field: %q", config["unit_of_measurement"])
+	}
+
+	if _, present := config["device_class"]; present {
+		t.Errorf("device_class present for a unitless field: %q", config["device_class"])
+	}
+}
+
+func TestDiscoveryConfigKeepsDeviceClass(t *testing.T) {
+	config := discoveryConfig(ports.DiscoveryField{Name: "Temperature_Env1", Factor: "1", Unit: "℃"}, "energy/inverter/state", "01ad")
+
+	if config["device_class"] != "temperature" {
+		t.Errorf("device_class = %q, want %q", config["device_class"], "temperature")
+	}
+
+	if config["unit_of_measurement"] != "°C" {
+		t.Errorf("unit_of_measurement = %q, want %q", config["unit_of_measurement"], "°C")
 	}
 }

@@ -125,27 +125,41 @@ func valueTemplate(name string, factor string) string {
 	return fmt.Sprintf("{{ value_json.%s|int * %s }}", name, factor)
 }
 
+func discoveryConfig(f ports.DiscoveryField, state string, uniq string) map[string]interface{} {
+	unit := normalizeUnit(f.Unit)
+
+	config := map[string]interface{}{
+		"name":                  f.Name,
+		"unique_id":             fmt.Sprintf("%s_%s", f.Name, uniq),
+		"state_class":           stateClass(f.Name, unit),
+		"state_topic":           state,
+		"value_template":        valueTemplate(f.Name, f.Factor),
+		"availability_topic":    state,
+		"availability_template": "{{ value_json.availability }}",
+		"device": map[string]interface{}{
+			"identifiers": [...]string{fmt.Sprintf("Inverter_%s", uniq)},
+			"name":        "Inverter",
+		},
+	}
+
+	// Home Assistant validates these against fixed enums and discards the whole
+	// config on an empty value, so send them only when we have one
+	if deviceClass := unit2DeviceClass(unit); deviceClass != "" {
+		config["device_class"] = deviceClass
+	}
+	if unit != "" {
+		config["unit_of_measurement"] = unit
+	}
+
+	return config
+}
+
 // MQTT Discovery: https://www.home-assistant.io/integrations/mqtt/#mqtt-discovery
 func (conn *Connection) InsertDiscoveryRecord(discovery string, state string, fields []ports.DiscoveryField) error {
 	uniq := "01ad"
 	for _, f := range fields {
 		topic := fmt.Sprintf("%s/%s/config", discovery, f.Name)
-		unit := normalizeUnit(f.Unit)
-		json, _ := json.Marshal(map[string]interface{}{
-			"name":                  f.Name,
-			"unique_id":             fmt.Sprintf("%s_%s", f.Name, uniq),
-			"device_class":          unit2DeviceClass(unit),
-			"state_class":           stateClass(f.Name, unit),
-			"state_topic":           state,
-			"unit_of_measurement":   unit,
-			"value_template":        valueTemplate(f.Name, f.Factor),
-			"availability_topic":    state,
-			"availability_template": "{{ value_json.availability }}",
-			"device": map[string]interface{}{
-				"identifiers": [...]string{fmt.Sprintf("Inverter_%s", uniq)},
-				"name":        "Inverter",
-			},
-		})
+		json, _ := json.Marshal(discoveryConfig(f, state, uniq))
 		conn.publish(topic, string(json), true) // MQTT Discovery messages should be retained, but in dev it can become a pain
 	}
 	return nil
