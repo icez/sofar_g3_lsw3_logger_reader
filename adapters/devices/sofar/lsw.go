@@ -7,7 +7,7 @@ import (
 
 	"github.com/sigurn/crc16"
 
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/ports"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/ports"
 )
 
 type LSWRequest struct {
@@ -137,7 +137,6 @@ func readData(connPort ports.CommunicationPort, serialNumber uint, nameFilter fu
 	}
 
 	return result, err
-	return result, nil
 }
 
 func readRegisterRange(rr registerRange, connPort ports.CommunicationPort, serialNumber uint) (ports.MeasurementMap, error) {
