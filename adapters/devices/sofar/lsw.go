@@ -87,56 +87,7 @@ func readData(connPort ports.CommunicationPort, serialNumber uint, nameFilter fu
 		}
 	}
 
-	for k, v := range reply {
-		result[k] = v
-	}
-
-	reply, err = readData(rrPVOutput, connPort, serialNumber)
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range reply {
-		result[k] = v
-	}
-
-	reply, err = readData(rrPVGeneration, connPort, serialNumber)
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range reply {
-		result[k] = v
-	}
-
-	reply, err = readData(rrSystemInfo, connPort, serialNumber)
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range reply {
-		result[k] = v
-	}
-
-	reply, err = readData(rrBatOutput, connPort, serialNumber)
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range reply {
-		result[k] = v
-	}
-
-	reply, err = readData(rrBatCharge, connPort, serialNumber)
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range reply {
-		result[k] = v
-	}
-
-	return result, err
+	return result, nil
 }
 
 func readRegisterRange(rr registerRange, connPort ports.CommunicationPort, serialNumber uint) (ports.MeasurementMap, error) {

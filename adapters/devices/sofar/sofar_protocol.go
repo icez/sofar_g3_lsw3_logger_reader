@@ -24,6 +24,7 @@ var allRegisterRanges = []registerRange{
 	rrEnergyTodayTotals,
 	rrSystemInfo,
 	rrBatOutput,
+	rrBatCharge,
 	rrRatio,
 }
 
