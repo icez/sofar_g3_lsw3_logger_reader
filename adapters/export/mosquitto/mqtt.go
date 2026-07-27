@@ -84,10 +84,11 @@ func unit2DeviceClass(unit string) string {
 		return "power"
 	} else if strings.HasSuffix(unit, "Hz") {
 		return "frequency"
+	} else if strings.HasSuffix(strings.ToLower(unit), "var") {
+		// Home Assistant spells reactive power lowercase: var, kvar
+		return "reactive_power"
 	} else if strings.HasSuffix(unit, "VA") {
 		return "apparent_power"
-	} else if strings.HasSuffix(unit, "VAR") {
-		return "reactive_power"
 	} else if strings.HasSuffix(unit, "V") {
 		return "voltage"
 	} else if strings.HasSuffix(unit, "A") {
@@ -103,12 +104,16 @@ func unit2DeviceClass(unit string) string {
 	}
 }
 
-func unit2StateClass(unit string) string {
-	if strings.HasSuffix(unit, "Wh") {
-		return "total"
-	} else {
+func stateClass(name string, unit string) string {
+	if !strings.HasSuffix(unit, "Wh") {
 		return "measurement"
 	}
+
+	// daily counters reset at midnight, lifetime ones only ever grow
+	if strings.HasSuffix(name, "_Today") {
+		return "total"
+	}
+	return "total_increasing"
 }
 
 // a field without a factor needs no scaling, and emitting an empty multiplier
@@ -130,7 +135,7 @@ func (conn *Connection) InsertDiscoveryRecord(discovery string, state string, fi
 			"name":                  f.Name,
 			"unique_id":             fmt.Sprintf("%s_%s", f.Name, uniq),
 			"device_class":          unit2DeviceClass(unit),
-			"state_class":           unit2StateClass(unit),
+			"state_class":           stateClass(f.Name, unit),
 			"state_topic":           state,
 			"unit_of_measurement":   unit,
 			"value_template":        valueTemplate(f.Name, f.Factor),
