@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/adapters/export/otlp"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/adapters/export/otlp"
 
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/adapters/export/mosquitto"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/adapters/export/mosquitto"
 	"gopkg.in/yaml.v2"
 )
 

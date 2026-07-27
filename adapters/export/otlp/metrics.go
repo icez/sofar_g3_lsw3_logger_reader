@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/adapters/devices/sofar"
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/ports"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/adapters/devices/sofar"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/ports"
 	grpc "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	http "go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/metric"

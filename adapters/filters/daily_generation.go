@@ -3,7 +3,7 @@ package filters
 import (
 	"errors"
 
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/ports"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/ports"
 )
 
 var ErrDailyGenerationDiffTooHigh = errors.New("daily generation spike detected, skipping")

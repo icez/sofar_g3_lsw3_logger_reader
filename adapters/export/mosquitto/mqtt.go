@@ -8,7 +8,7 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/ports"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/ports"
 )
 
 type MqttConfig struct {

@@ -1,7 +1,7 @@
 package sofar
 
 import (
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/ports"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/ports"
 )
 
 type field struct {

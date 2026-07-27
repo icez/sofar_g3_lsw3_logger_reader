@@ -11,13 +11,13 @@ import (
 
 	gser "go.bug.st/serial"
 
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/adapters/comms/serial"
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/adapters/comms/tcpip"
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/adapters/devices/sofar"
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/adapters/export/mosquitto"
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/adapters/export/otlp"
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/adapters/filters"
-	"github.com/kubaceg/sofar_g3_lsw3_logger_reader/ports"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/adapters/comms/serial"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/adapters/comms/tcpip"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/adapters/devices/sofar"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/adapters/export/mosquitto"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/adapters/export/otlp"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/adapters/filters"
+	"github.com/icez/sofar_g3_lsw3_logger_reader/ports"
 )
 
 const maximumFailedConnections = 3
